@@ -7,5 +7,4 @@ locals {
     Owner       = "Tamie-Emmanuel"
     Company     = "Elitesolutionsit"
   }
-  admin_username = "elite"
 }
