@@ -1,20 +1,14 @@
 resource "azurerm_resource_group" "elite_network_rg" {
   name     = "elite_network_rg"
-  location = "central us"
+  location = "eastus2"
 }
 
-resource "azurerm_network_security_group" "elitedev_nsg" {
-  name                = "elitedev_nsg"
-  location            = azurerm_resource_group.elite_network_rg.location
-  resource_group_name = azurerm_resource_group.elite_network_rg.name
-}
-
-resource "azurerm_virtual_network" "elitedev_vnet" {
-  name                = "elitedev_vnet"
+resource "azurerm_virtual_network" "elite_linux_vnet" {
+  name                = "elite_linux_vnet"
   location            = azurerm_resource_group.elite_network_rg.location
   resource_group_name = azurerm_resource_group.elite_network_rg.name
   address_space       = ["10.0.0.0/16"]
-  dns_servers         = ["10.0.0.4", "10.0.0.5"]
+  #   dns_servers         = ["10.0.0.4", "10.0.0.5"]
 
   # subnet = []
 
@@ -24,6 +18,26 @@ resource "azurerm_virtual_network" "elitedev_vnet" {
     Company     = "Elitesolutionit"
     ManagedWith = "Terraform"
   }
+}
+
+resource "azurerm_network_security_group" "elitedev_nsg" {
+  name                = "elitedev_nsg"
+  location            = azurerm_resource_group.elite_network_rg.location
+  resource_group_name = azurerm_resource_group.elite_network_rg.name
+}
+
+resource "azurerm_network_security_rule" "SSH" {
+  name                        = "SSH"
+  priority                    = 103
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "22"
+  source_address_prefix       = "84.232.141.74"
+  destination_address_prefix  = "VirtualNetwork"
+  resource_group_name         = azurerm_resource_group.elite_network_rg.name
+  network_security_group_name = azurerm_network_security_group.elitedev_nsg.name
 }
 
 resource "azurerm_route_table" "elite_rtb" {
@@ -46,33 +60,15 @@ resource "azurerm_route_table" "elite_rtb" {
 resource "azurerm_subnet" "db-subnet" {
   name                 = "db-subnet"
   resource_group_name  = azurerm_resource_group.elite_network_rg.name
-  virtual_network_name = azurerm_virtual_network.elitedev_vnet.name
+  virtual_network_name = azurerm_virtual_network.elite_linux_vnet.name
   address_prefixes     = ["10.0.1.0/24"]
-
-  # delegation {
-  #   name = "delegation"
-
-  #   service_delegation {
-  #     name    = "Microsoft.ContainerInstance/containerGroups"
-  #     actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"]
-  #   }
-  # }
 }
 
 resource "azurerm_subnet" "app-subnet" {
   name                 = "app-subnet"
   resource_group_name  = azurerm_resource_group.elite_network_rg.name
-  virtual_network_name = azurerm_virtual_network.elitedev_vnet.name
+  virtual_network_name = azurerm_virtual_network.elite_linux_vnet.name
   address_prefixes     = ["10.0.2.0/24"]
-
-  # delegation {
-  #   name = "delegation"
-
-  #   service_delegation {
-  #     name    = "Microsoft.ContainerInstance/containerGroups"
-  #     actions = ["Microsoft.Network/virtualNetworks/subnets/join/action", "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action"]
-  #   }
-  # }
 }
 
 resource "azurerm_subnet_route_table_association" "elite_rtb_assoc_db" {
